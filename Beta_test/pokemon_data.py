@@ -298,7 +298,7 @@ POKEMON_DATA = {
     },
 
     # ----- Nidoran♀ Line -----
-    "Nidoran♀": {
+    "Nidoran_f": {
         "level": 5,
         "type": ["Poison"],
         "evolve_level": 16,
@@ -323,7 +323,7 @@ POKEMON_DATA = {
         "moves": {1: ["Scratch", "Bite"], 35: ["Body Slam"]},
     },
         # ----- Nidoran♂ Line -----
-    "Nidoran♂": {
+    "Nidoran_m": {
         "level": 5,
         "type": ["Poison"],
         "evolve_level": 16,
@@ -786,55 +786,54 @@ POKEMON_DATA = {
     # ----- BOSS POKEMON -----
     "BossMon": {
         "level": 20,
-        "type": ["Normal", "Dragon"],
+        "type": ["Normal"],
         "evolve_level": None,
         "evolves_to": None,
-        "base_stats": {"hp": 150, "attack": 120, "defense": 100, "speed": 80},
+        "base_stats": {"hp": 60, "attack": 56, "defense": 35, "speed": 72},
         "moves": {
-            1: ["Tackle", "Dragon Rage"],
-            20: ["Hyper Beam"],
-            30: ["Dragon Claw"],
-            40: ["Outrage"]
+            1: ["Tackle", "Quick Attack"],
+            10: ["Bite"],
+            20: ["Hyper Fang"]
         },
     },
     "BossMon_Form1": {
         "level": 20,
-        "type": ["Fire", "Dragon"],
+        "type": ["Fairy"],
         "evolve_level": None,
         "evolves_to": None,
-        "base_stats": {"hp": 160, "attack": 130, "defense": 110, "speed": 85},
+        "base_stats": {"hp": 70, "attack": 45, "defense": 48, "speed": 35},
         "moves": {
-            1: ["Ember", "Dragon Rage"],
-            20: ["Flamethrower"],
-            30: ["Dragon Claw"],
-            40: ["Fire Blast"]
+            1: ["Pound", "Sing"],
+            15: ["Double Slap"],
+            20: ["Moonblast"]
         },
     },
     "BossMon_Form2": {
         "level": 40,
-        "type": ["Water", "Dragon"],
+        "type": ["Normal"],
         "evolve_level": None,
         "evolves_to": None,
-        "base_stats": {"hp": 180, "attack": 140, "defense": 120, "speed": 90},
+        "base_stats": {"hp": 160, "attack": 110, "defense": 65, "speed": 30},
         "moves": {
-            1: ["Water Gun", "Dragon Rage"],
-            20: ["Hydro Pump"],
-            30: ["Dragon Claw"],
-            40: ["Tsunami"]
+            1: ["Headbutt", "Rest"],
+            20: ["Body Slam"],
+            30: ["Crunch"],
+            40: ["Hyper Beam"]
         },
     },
     "BossMon_Form3": {
         "level": 50,
-        "type": ["Electric", "Dragon"],
+        "type": ["Water", "Ice"],
         "evolve_level": None,
         "evolves_to": None,
-        "base_stats": {"hp": 200, "attack": 150, "defense": 130, "speed": 100},
+        "base_stats": {"hp": 130, "attack": 85, "defense": 80, "speed": 60},
         "moves": {
-            1: ["Thunder Shock", "Dragon Rage"],
-            20: ["Thunderbolt"],
-            30: ["Dragon Claw"],
-            40: ["Thunder"],
-            50: ["Zap Cannon"]
+            1: ["Water Gun", "Sing"],
+            20: ["Ice Beam"],
+            30: ["Body Slam"],
+            40: ["Surf"],
+            50: ["Blizzard"]
         },
     },
+
 }
