@@ -16,6 +16,12 @@ font = pygame.font.SysFont("Arial", 26)
 small_font = pygame.font.SysFont("Arial", 20)
 tiny_font = pygame.font.SysFont("Arial", 16)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def asset_path(*parts):
+    return os.path.join(BASE_DIR, "assets", *parts)
+
+
 # ----- Load Images -----
 def load_image(path, size=None):
     try:
@@ -32,23 +38,24 @@ def load_image(path, size=None):
 
 # Load backgrounds
 backgrounds = {
-    "Forest": load_image("assets/backgrounds/forest.png", (WIDTH, HEIGHT)),
-    "Cave": load_image("assets/backgrounds/cave.png", (WIDTH, HEIGHT)),
-    "Tower": load_image("assets/backgrounds/tower.png", (WIDTH, HEIGHT)),
-    "Beach": load_image("assets/backgrounds/beach.png", (WIDTH, HEIGHT)),
-    "Menu": None
+    "Forest": load_image(asset_path("backgrounds", "forest.png"), (WIDTH, HEIGHT)),
+    "Cave": load_image(asset_path("backgrounds", "cave.png"), (WIDTH, HEIGHT)),
+    "Tower": load_image(asset_path("backgrounds", "tower.png"), (WIDTH, HEIGHT)),
+    "Beach": load_image(asset_path("backgrounds", "beach.png"), (WIDTH, HEIGHT)),
+    "Menu": load_image(asset_path("backgrounds", "menu-3.png"), (WIDTH, HEIGHT)),
 }
 
 # Load item images
 item_images = {
-    "Pokeball": load_image("assets/items/Pokeball.png", (40, 40)),
-    "Potion": load_image("assets/items/Potion.png", (40, 40)),
-    "Rare Candy": load_image("assets/items/Rare-Candy.png", (40, 40))
-    
+    "Pokeball": load_image(asset_path("items", "Pokeball.png"), (40, 40)),
+    "Potion": load_image(asset_path("items", "Potion.png"), (40, 40)),
+    "Rare Candy": load_image(asset_path("items", "Rare-Candy.png"), (40, 40)),
+    "Revive": load_image(asset_path("items", "Revive.png"), (40, 40)),
+    "Heal": load_image(asset_path("items", "Heal.png"), (40, 40)),
 }
 
 # Load rival image
-rival_image = load_image("assets/trainer/rival.png", (150, 150))
+rival_image = load_image(asset_path("trainer", "rival.png"), (150, 150))
 
 # Pokemon image cache
 pokemon_image_cache = {}
@@ -60,25 +67,23 @@ def get_pokemon_image(name, size=(120, 120), front=True):
 
     # --- Enemy sprite (front) ---
     if front:
-        path = f"assets/pokemon/{name.lower()}_front.png"
+        path = asset_path("pokemon", f"{name.lower()}_front.png")
         if os.path.exists(path):
             img = load_image(path, size)
         else:
-            # fallback placeholder
-            img = load_image("assets/pokemon/placeholder_front.png", size)
+            img = load_image(asset_path("pokemon", "placeholder_front.png"), size)
 
     # --- Player sprite (back) ---
     else:
-        back_path = f"assets/pokemon/{name.lower()}_back.png"
-        front_path = f"assets/pokemon/{name.lower()}_front.png"
+        back_path = asset_path("pokemon", f"{name.lower()}_back.png")
+        front_path = asset_path("pokemon", f"{name.lower()}_front.png")
         if os.path.exists(back_path):
             img = load_image(back_path, size)
         elif os.path.exists(front_path):
-            # flip front → back (so player always faces right)
             img = load_image(front_path, size)
-            img = pygame.transform.flip(img, True, False)
+            img = pygame.transform.flip(img, True, False)  # flip front → back
         else:
-            img = load_image("assets/pokemon/placeholder_back.png", size)
+            img = load_image(asset_path("pokemon", "placeholder_back.png"), size)
 
     pokemon_image_cache[cache_key] = img
     return img
@@ -142,7 +147,10 @@ class PokemonGame:
 
     # ----------------------- MENU -----------------------
     def draw_menu(self):
-        screen.fill((30,30,60))
+        if backgrounds.get("Menu"):
+            screen.blit(backgrounds["Menu"], (0, 0))
+        else:
+            screen.fill((30,30,60))
         
         # Title
         title_surf = font.render("Pokémon Roguelike", True, (255,255,0))
@@ -670,6 +678,10 @@ class PokemonGame:
                 screen.blit(pygame.transform.scale(item_images["Potion"], (35, 35)), (215, y_pos - 5))
             elif opt == "Rare Candy" and "Rare Candy" in item_images:
                 screen.blit(pygame.transform.scale(item_images["Rare Candy"], (35, 35)), (215, y_pos - 5))
+            elif opt == "Revive" and "Revive" in item_images:
+                screen.blit(pygame.transform.scale(item_images["Revive"], (35, 35)), (215, y_pos - 5))
+            elif opt == "Heal" and "Heal" in item_images:
+                screen.blit(pygame.transform.scale(item_images["Heal"], (35, 35)), (215, y_pos - 5))
             
             color = (255,255,0) if i == self.reward_selected_index else (255,255,255)
             self.draw_text(opt, 270, y_pos, color)
