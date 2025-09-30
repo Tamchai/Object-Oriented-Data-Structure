@@ -6,6 +6,7 @@ import os
 from game import build_pokemon_from_species, generate_rival_team, Game, Enemy
 from pokemon import Pokemon, Move, Pokeball, Potion
 from areas import get_area_for_stage, encounter
+from data_structures import Queue, Menu2DLinkedList, AreaTree
 
 pygame.init()
 WIDTH, HEIGHT = 900, 600
@@ -108,6 +109,10 @@ class PokemonGame:
         self.current_area = "Forest"
         self.pending_move = None
         self.pending_pokemon = None
+        self.pokemon_queue = Queue()
+        self.battle_menu = Menu2DLinkedList()
+        self.move_menu = Menu2DLinkedList()
+        self.area_tree = AreaTree()
 
         # ----- Player initialization -----
         self.player = {
@@ -247,7 +252,7 @@ class PokemonGame:
             return
 
         # Normal Stage
-        area = get_area_for_stage(self.stage_number)
+        area = self.area_tree.get_area_for_stage(self.stage_number)
         self.current_area = area
         max_level = min(5 + self.stage_number // 2, 50)
         attempts = 0
@@ -397,6 +402,7 @@ class PokemonGame:
             self.draw_text(line.strip(), 40, 30 + i * 25, (255, 255, 0), small_font)
 
         # MENU OPTIONS
+        self.battle_menu.create_battle_menu() 
         menu_panel = pygame.Surface((850, 60))
         menu_panel.set_alpha(220)
         menu_panel.fill((20, 20, 40))
@@ -567,6 +573,10 @@ class PokemonGame:
             return
         self.state = "BATTLE_SKILL_SELECT"
         self.message = "Choose a move:"
+
+        player_pokemon = self.player["team"][0]
+        self.move_menu.create_move_menu(player_pokemon.moves)
+        
         self.selected_index = 0
 
     def handle_new_moves(self, pokemon):
