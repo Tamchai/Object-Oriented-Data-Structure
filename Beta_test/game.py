@@ -34,8 +34,6 @@ def build_pokemon_from_species(species_name: str, level: Optional[int] = None) -
     p.moves = moves_list
     p.max_hp = p.base_stats.get("hp", 10) + p.level * 2
     p.hp = p.max_hp
-
-    # catch_rate function
     p.catch_rate = lambda: random.random() < 0.9 * (1 - 0.5 * (p.hp/p.max_hp))
     return p
 

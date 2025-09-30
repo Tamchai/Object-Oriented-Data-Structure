@@ -31,7 +31,6 @@ def load_image(path, size=None):
             img = pygame.transform.scale(img, size)
         return img
     except:
-        # Return placeholder surface if image not found
         surf = pygame.Surface(size if size else (100, 100))
         surf.fill((200, 200, 200))
         pygame.draw.rect(surf, (100, 100, 100), surf.get_rect(), 2)
@@ -66,7 +65,6 @@ def get_pokemon_image(name, size=(120, 120), front=True):
     if cache_key in pokemon_image_cache:
         return pokemon_image_cache[cache_key]
 
-    # --- Enemy sprite (front) ---
     if front:
         path = asset_path("pokemon", f"{name.lower()}_front.png")
         if os.path.exists(path):
@@ -74,7 +72,6 @@ def get_pokemon_image(name, size=(120, 120), front=True):
         else:
             img = load_image(asset_path("pokemon", "placeholder_front.png"), size)
 
-    # --- Player sprite (back) ---
     else:
         back_path = asset_path("pokemon", f"{name.lower()}_back.png")
         front_path = asset_path("pokemon", f"{name.lower()}_front.png")
@@ -82,7 +79,7 @@ def get_pokemon_image(name, size=(120, 120), front=True):
             img = load_image(back_path, size)
         elif os.path.exists(front_path):
             img = load_image(front_path, size)
-            img = pygame.transform.flip(img, True, False)  # flip front → back
+            img = pygame.transform.flip(img, True, False)
         else:
             img = load_image(asset_path("pokemon", "placeholder_back.png"), size)
 
@@ -112,7 +109,7 @@ class PokemonGame:
         self.battle_menu.create_battle_menu()
         self.move_menu = Menu2DLinkedList()
         self.area_tree = AreaTree()
-
+        
         self.player = {
             "team": [],
             "items": {
@@ -125,7 +122,6 @@ class PokemonGame:
         self.reward_selected_index = 0
         self.reward_select_list = []
         self.reward_action = ""
-
         self.boss_stages = [10,20,30,40,50]
         self.rival_stages = [5,15,25,35,45]
 
@@ -223,8 +219,6 @@ class PokemonGame:
             self.state = "BATTLE"
             self.message = f"Stage {self.stage_number}: Boss {self.enemy.name} appeared!"
             self.selected_index = 0
-            
-            # ===== ใช้ Tree =====
             self.current_area = self.area_tree.get_area_for_stage(self.stage_number)
             return
 
@@ -238,12 +232,9 @@ class PokemonGame:
             self.state = "BATTLE"
             self.message = f"Stage {self.stage_number}: Rival appeared!"
             self.selected_index = 0
-            
-            # ===== ใช้ Tree =====
             self.current_area = self.area_tree.get_area_for_stage(self.stage_number)
             return
-
-        # ===== ใช้ Tree แทน get_area_for_stage() =====
+        
         area = self.area_tree.get_area_for_stage(self.stage_number)
         self.current_area = area
         
@@ -267,7 +258,6 @@ class PokemonGame:
         self.selected_index = 0
 
     def draw_stage_info(self):
-        # ===== ใช้ Tree =====
         area = self.area_tree.get_area_for_stage(self.stage_number - 1) if self.stage_number > 1 else "Forest"
         if backgrounds.get(area):
             screen.blit(backgrounds[area], (0, 0))
@@ -451,7 +441,6 @@ class PokemonGame:
         screen.blit(move_panel, (200, 200))
         pygame.draw.rect(screen, (255, 255, 255), (200, 200, 500, 250), 3)
         
-        # ===== ใช้ 2D Linked List ดึง index =====
         self.selected_index = self.move_menu.get_current_index()
         
         moves = [move.name for move in player_pokemon.moves[:4]]
@@ -536,7 +525,6 @@ class PokemonGame:
         else:
             self.state = "BATTLE"
             self.selected_index = 0
-            # ===== รีเซ็ต battle menu =====
             self.battle_menu.reset_to_first()
 
     def set_skill_state(self):
@@ -555,8 +543,6 @@ class PokemonGame:
         
         self.state = "BATTLE_SKILL_SELECT"
         self.message = "Choose a move:"
-        
-        # ===== ใช้ 2D Linked List สร้างกริดท่า =====
         player_pokemon = self.player["team"][0]
         self.move_menu.create_move_menu(player_pokemon.moves)
         self.selected_index = 0
@@ -874,12 +860,11 @@ while running:
                     game.selected_index = (game.selected_index-1) % len(game.starters)
                 elif event.key == pygame.K_z:
                     game.start_game(game.starters[game.selected_index])
-            
+
             elif game.state == "STAGE":
                 if event.key == pygame.K_z:
                     game.next_stage()
-            
-            # ===== ใช้ 2D Linked List ใน BATTLE =====
+                    
             elif game.state == "BATTLE":
                 if event.key == pygame.K_RIGHT:
                     if game.battle_menu.move_right():
@@ -897,8 +882,7 @@ while running:
                         game.switch_pokemon()
                     elif choice == "Run":
                         game.run_away()
-            
-            # ===== ใช้ 2D Linked List ใน BATTLE_SKILL_SELECT =====
+
             elif game.state == "BATTLE_SKILL_SELECT":
                 if event.key == pygame.K_RIGHT:
                     if game.move_menu.move_right():
