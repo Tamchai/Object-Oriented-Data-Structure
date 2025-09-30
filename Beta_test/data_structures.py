@@ -1,14 +1,12 @@
 # data_structures.py
 
 class Node:
-    """Node for Queue"""
     def __init__(self, data):
         self.data = data
         self.next = None
 
 
 class Queue:
-    """Queue for managing Pokemon rotation"""
     def __init__(self):
         self.front = None
         self.rear = None
