@@ -5,7 +5,6 @@ class Node:
         self.data = data
         self.next = None
 
-
 class Queue:
     def __init__(self):
         self.front = None
@@ -45,7 +44,6 @@ class Queue:
             current = current.next
         return items
 
-
 class LinkedListNode:
     def __init__(self, data):
         self.data = data
@@ -53,7 +51,6 @@ class LinkedListNode:
         self.down = None
         self.left = None
         self.up = None
-
 
 class Menu2DLinkedList:
     def __init__(self):
@@ -142,9 +139,7 @@ class Menu2DLinkedList:
             return 0
     
     def reset_to_first(self):
-        """Reset current to root node"""
         self.current = self.root
-
 
 class TreeNode:
     def __init__(self, area_name, stage_range):
@@ -156,7 +151,6 @@ class TreeNode:
     def add_child(self, child_node):
         child_node.parent = self
         self.children.append(child_node)
-
 
 class AreaTree:
     def __init__(self):
