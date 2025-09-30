@@ -42,7 +42,7 @@ backgrounds = {
     "Cave": load_image(asset_path("backgrounds", "cave.png"), (WIDTH, HEIGHT)),
     "Tower": load_image(asset_path("backgrounds", "tower.png"), (WIDTH, HEIGHT)),
     "Beach": load_image(asset_path("backgrounds", "beach.png"), (WIDTH, HEIGHT)),
-    "Menu": load_image(asset_path("backgrounds", "menu-3.png"), (WIDTH, HEIGHT)),
+    "Menu": load_image(asset_path("backgrounds", "menu-2.png"), (WIDTH, HEIGHT)),
 }
 
 # Load item images
