@@ -36,7 +36,7 @@ class Move:
         self.power = power
         self.type = type_
         self.accuracy = accuracy
-        self.category = category  # Physical, Special, or Status
+        self.category = category
         self.pp = pp
         self.max_pp = pp
 
@@ -100,16 +100,14 @@ class Move:
         
         # Critical hit (1/16 chance)
         critical = 1.0
-        if random.random() < 0.0625:  # 1/16 chance
+        if random.random() < 0.0625:
             critical = 1.5
             self._was_critical = True
         else:
             self._was_critical = False
         
-        # Random factor (85-100%)
         random_factor = random.uniform(0.85, 1.0)
         
-        # Weather, abilities, items would go here in full implementation
         other_modifiers = 1.0
         
         # Final damage calculation
@@ -125,7 +123,6 @@ class Move:
         return effectiveness
 
     def calculate_exp_gain(self, winner, loser):
-        # Enhanced EXP calculation
         base_exp = 50
         level_diff = max(1, loser.level - winner.level + 5)
         exp = base_exp * loser.level * level_diff // 5
@@ -181,24 +178,19 @@ class Pokemon:
         self.status = None  # None, "burn", "poison", "paralysis", "sleep", "freeze"
         self.status_counter = 0
         
-        # Assign catch rate method
         self.catch_rate = self.default_catch_rate
 
     def calculate_stats(self):
-        """Calculate actual stats based on base stats, level, IVs, and EVs"""
-        # HP calculation (different formula)
         base_hp = self.base_stats.get("hp", 50)
         iv_hp = self.ivs.get("hp", 0)
         ev_hp = self.evs.get("hp", 0)
         self.max_hp = ((2 * base_hp + iv_hp + ev_hp // 4) * self.level // 100) + self.level + 10
         
-        # Store attack as a stat (not overriding the method)
         base_attack = self.base_stats.get("attack", 50)
         iv_attack = self.ivs.get("attack", 0)
         ev_attack = self.evs.get("attack", 0)
         self.attack_power = ((2 * base_attack + iv_attack + ev_attack // 4) * self.level // 100) + 5
         
-        # Other stats calculation
         for stat in ["defense", "speed"]:
             base = self.base_stats.get(stat, 50)
             iv = self.ivs.get(stat, 0)
@@ -206,19 +198,15 @@ class Pokemon:
             value = ((2 * base + iv + ev // 4) * self.level // 100) + 5
             setattr(self, stat, value)
         
-        # Special stats (if not in base_stats, use regular stats)
         self.sp_attack = self.base_stats.get("sp_attack", self.base_stats.get("attack", 50))
         self.sp_defense = self.base_stats.get("sp_defense", self.base_stats.get("defense", 50))
 
     def get_stat(self, stat_name):
-        """Get a stat value with status condition modifiers"""
-        # Map attack to attack_power
         if stat_name == "attack":
             base_value = self.attack_power
         else:
             base_value = getattr(self, stat_name, 50)
         
-        # Apply status condition modifiers
         if self.status == "burn" and stat_name == "attack":
             return int(base_value * 0.5)
         elif self.status == "paralysis" and stat_name == "speed":
@@ -227,7 +215,6 @@ class Pokemon:
         return base_value
 
     def get_available_moves(self):
-        """Get all moves available at current level"""
         data = POKEMON_DATA.get(self.name, {})
         available = []
         
@@ -239,12 +226,9 @@ class Pokemon:
                     move = Move(move_name, power, move_type, accuracy, category)
                     available.append(move)
         
-        # Limit to 4 most recent moves
         return available[-4:] if len(available) > 4 else available
 
     def get_move_properties(self, move_name):
-        """Determine move properties based on move name"""
-        # Move database (simplified)
         move_db = {
             # Normal moves
             "Tackle": (40, "Normal", "Physical", 100),
@@ -374,7 +358,6 @@ class Pokemon:
             "Fury Swipes": (18, "Normal", "Physical", 80),
         }
         
-        # Return move properties or default values
         if move_name in move_db:
             return move_db[move_name]
         else:
