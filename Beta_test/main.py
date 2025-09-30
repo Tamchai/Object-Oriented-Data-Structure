@@ -175,7 +175,6 @@ class PokemonGame:
         pkm = build_pokemon_from_species(starter, level=5)
         self.player["team"].append(pkm)
         
-        # ===== ใช้ Queue: เพิ่ม Pokemon เข้าคิว =====
         self.pokemon_queue.enqueue(pkm)
         
         self.stage_number = 1
@@ -608,7 +607,6 @@ class PokemonGame:
             if caught:
                 if len(self.player["team"]) < 6:
                     self.player["team"].append(self.catch_candidate)
-                    # ===== ใช้ Queue: เพิ่ม Pokemon ที่จับได้ =====
                     self.pokemon_queue.enqueue(self.catch_candidate)
                     self.message = f"You caught {self.catch_candidate.name}!"
                 else:
@@ -820,8 +818,6 @@ class PokemonGame:
             self.message = f"Cannot switch to that Pokémon!"
             return
         
-        # ===== ใช้ Queue: สลับ Pokemon =====
-        # Dequeue ตัวหน้า แล้ว enqueue กลับไปท้าย
         if not self.pokemon_queue.is_empty():
             old_front = self.pokemon_queue.dequeue()
             self.pokemon_queue.enqueue(old_front)
