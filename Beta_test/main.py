@@ -92,7 +92,6 @@ def get_pokemon_image(name, size=(120, 120), front=True):
         
 class PokemonGame:
     def __init__(self):
-        # ----- Core -----
         self.state = "MENU"
         self.game_core = Game()
         self.enemy = None
@@ -100,7 +99,6 @@ class PokemonGame:
         self.message = ""
         self.starters = ["Bulbasaur", "Charmander", "Squirtle"]
         self.stage_number = 1
-        self.catch_candidate = None
         self.catch_start_time = 0
         self.selected_index = 0
         self.menu_options = []
@@ -111,10 +109,10 @@ class PokemonGame:
         self.pending_pokemon = None
         self.pokemon_queue = Queue()
         self.battle_menu = Menu2DLinkedList()
+        self.battle_menu.create_battle_menu()
         self.move_menu = Menu2DLinkedList()
         self.area_tree = AreaTree()
 
-        # ----- Player initialization -----
         self.player = {
             "team": [],
             "items": {
@@ -123,17 +121,14 @@ class PokemonGame:
             }
         }
 
-        # ----- Reward Phase -----
         self.reward_options = ["Revive", "Pokéball +5", "Potion +1", "Heal", "Rare Candy"]
         self.reward_selected_index = 0
         self.reward_select_list = []
         self.reward_action = ""
 
-        # ----- Boss & Rival -----
         self.boss_stages = [10,20,30,40,50]
         self.rival_stages = [5,15,25,35,45]
 
-    # ---------- helper draw ----------
     def draw_text(self, text, x, y, color=(255,255,255), font_=None):
         f = font_ if font_ else font
         label = f.render(text, True, color)
@@ -157,26 +152,21 @@ class PokemonGame:
         else:
             screen.fill((30,30,60))
         
-        # Title
         title_surf = font.render("Pokémon Roguelike", True, (255,255,0))
         title_rect = title_surf.get_rect(center=(WIDTH//2, 80))
         screen.blit(title_surf, title_rect)
         
         self.draw_text("Choose your starter:", WIDTH//2 - 100, 150)
         
-        # Draw starter Pokemon with images
         for i, starter in enumerate(self.starters):
             y_pos = 220 + i * 120
             
-            # Selection box
             if self.selected_index == i:
                 pygame.draw.rect(screen, (255, 255, 0), (230, y_pos - 15, 440, 90), 3)
             
-            # Pokemon image
             poke_img = get_pokemon_image(starter, (80, 80))
             screen.blit(poke_img, (250, y_pos - 10))
             
-            # Name and info
             color = (255,255,0) if self.selected_index == i else (255,255,255)
             self.draw_text(starter, 360, y_pos + 10, color)
             self.draw_text("Lv 5", 360, y_pos + 40, (200,200,200), small_font)
@@ -184,6 +174,10 @@ class PokemonGame:
     def start_game(self, starter):
         pkm = build_pokemon_from_species(starter, level=5)
         self.player["team"].append(pkm)
+        
+        # ===== ใช้ Queue: เพิ่ม Pokemon เข้าคิว =====
+        self.pokemon_queue.enqueue(pkm)
+        
         self.stage_number = 1
         self.next_stage()
 
@@ -199,7 +193,6 @@ class PokemonGame:
             self.draw_text("Press Z to continue", 70, 160)
             return
 
-        # กล่องข้อความ
         panel = pygame.Surface((800, 400))
         panel.set_alpha(230)
         panel.fill((30, 30, 60))
@@ -208,12 +201,10 @@ class PokemonGame:
 
         self.draw_text(f"{pkm.name} wants to learn {new_move.name}!", 70, 120, (255, 255, 0))
 
-        # แสดงท่าเก่า + cancel
         options = [m.name for m in pkm.moves] + [f"Cancel (keep old moves)"]
         for i, opt in enumerate(options):
             color = (255, 255, 0) if self.selected_index == i else (255, 255, 255)
             self.draw_text(opt, 100, 180 + i * 50, color)
-
 
     # ----------------------- STAGE -----------------------
     def next_stage(self):
@@ -224,7 +215,6 @@ class PokemonGame:
             self.message = "Congratulations! You completed all 50 stages!"
             return
 
-        # Boss Stage
         if self.stage_number in self.boss_stages:
             boss_level = min(50, self.stage_number + 10)
             self.enemy = build_pokemon_from_species("BossMon", level=boss_level)
@@ -234,10 +224,11 @@ class PokemonGame:
             self.state = "BATTLE"
             self.message = f"Stage {self.stage_number}: Boss {self.enemy.name} appeared!"
             self.selected_index = 0
-            self.current_area = "Tower"
+            
+            # ===== ใช้ Tree =====
+            self.current_area = self.area_tree.get_area_for_stage(self.stage_number)
             return
 
-        # Rival Stage
         if self.stage_number in self.rival_stages:
             rival_enemy = generate_rival_team(stage_level=self.stage_number)
             for p in rival_enemy.team:
@@ -248,12 +239,15 @@ class PokemonGame:
             self.state = "BATTLE"
             self.message = f"Stage {self.stage_number}: Rival appeared!"
             self.selected_index = 0
-            self.current_area = "Tower"
+            
+            # ===== ใช้ Tree =====
+            self.current_area = self.area_tree.get_area_for_stage(self.stage_number)
             return
 
-        # Normal Stage
+        # ===== ใช้ Tree แทน get_area_for_stage() =====
         area = self.area_tree.get_area_for_stage(self.stage_number)
         self.current_area = area
+        
         max_level = min(5 + self.stage_number // 2, 50)
         attempts = 0
         while True:
@@ -274,7 +268,8 @@ class PokemonGame:
         self.selected_index = 0
 
     def draw_stage_info(self):
-        area = get_area_for_stage(self.stage_number - 1) if self.stage_number > 1 else "Forest"
+        # ===== ใช้ Tree =====
+        area = self.area_tree.get_area_for_stage(self.stage_number - 1) if self.stage_number > 1 else "Forest"
         if backgrounds.get(area):
             screen.blit(backgrounds[area], (0, 0))
         else:
@@ -290,7 +285,6 @@ class PokemonGame:
 
     # ----------------------- BATTLE -----------------------
     def draw_battle(self):
-        # Draw background
         if backgrounds.get(self.current_area):
             screen.blit(backgrounds[self.current_area], (0, 0))
         else:
@@ -301,7 +295,6 @@ class PokemonGame:
             self.message = "No Pokémon in team!"
             return
 
-        # Get enemy Pokemon
         enemy_pkms = []
         is_rival = False
         if isinstance(self.enemy, Pokemon):
@@ -312,7 +305,6 @@ class PokemonGame:
         elif isinstance(self.enemy, list):
             enemy_pkms = self.enemy
 
-        # DRAW PLAYER POKEMON (bottom left)
         if player_pokemon:
             player_img = get_pokemon_image(player_pokemon.name, (160, 160), front=False)
             screen.blit(player_img, (100, HEIGHT - 200))
@@ -320,7 +312,7 @@ class PokemonGame:
             panel = pygame.Surface((250, 80))
             panel.set_alpha(200)
             panel.fill((40, 40, 40))
-            screen.blit(panel, (WIDTH - 300, HEIGHT - 160))  # ขวาล่าง
+            screen.blit(panel, (WIDTH - 300, HEIGHT - 160))
             pygame.draw.rect(screen, (255, 255, 255), (WIDTH - 300, HEIGHT - 160, 250, 80), 2)
             
             self.draw_text(f"{player_pokemon.name}", WIDTH - 290, HEIGHT - 155, (255,255,255))
@@ -328,38 +320,30 @@ class PokemonGame:
             self.draw_health_bar(player_pokemon, WIDTH - 290, HEIGHT - 125, 230, 15)
             self.draw_text(f"{player_pokemon.hp}/{player_pokemon.max_hp}", WIDTH - 290, HEIGHT - 105, (255,255,255), small_font)
 
-        # DRAW ENEMY POKEMON (top right)
         if is_rival and enemy_pkms:
-            # Rival trainer sprite
             screen.blit(rival_image, (WIDTH - 250, 40)) 
             
             if enemy_pkms:
                 pkm = enemy_pkms[0]
                 enemy_img = get_pokemon_image(pkm.name, (180, 180), front=True)
-                # Pokémon ของ Rival อยู่ขวากลางบน (เลื่อนลงมาหน่อย)
-                screen.blit(enemy_img, (WIDTH - 320, HEIGHT // 3))  
+                screen.blit(enemy_img, (WIDTH - 320, HEIGHT // 3))
 
-                # HP panel (เลื่อนลงมาจาก 20 → 120)
                 panel = pygame.Surface((250, 80))
                 panel.set_alpha(200)
                 panel.fill((40, 40, 40))
                 screen.blit(panel, (WIDTH - 320, 120))
                 pygame.draw.rect(screen, (255, 255, 255), (WIDTH - 320, 120, 250, 80), 2)
 
-                # ข้อความบนกล่อง HP
                 self.draw_text(f"{pkm.name}", WIDTH - 310, 125, (255,255,255))
                 self.draw_text(f"Lv{pkm.level}", WIDTH - 110, 125, (255,255,0), small_font)
                 self.draw_health_bar(pkm, WIDTH - 310, 155, 230, 15)
                 self.draw_text(f"{pkm.hp}/{pkm.max_hp}", WIDTH - 310, 175, (255,255,255), small_font)
 
-                # Team count (ขยับตามลงมา)
                 alive_count = len([p for p in self.enemy.team if p.hp > 0])
                 self.draw_text(f"Team: {alive_count}/{len(self.enemy.team)}", WIDTH - 250, 200, (255,255,0), tiny_font)
-
         else:
-            # Wild Pokémon (กลางขวา)
             if enemy_pkms:
-                y = HEIGHT // 3   # ศัตรูอยู่ประมาณกลางจอ
+                y = HEIGHT // 3
                 for i, pkm in enumerate(enemy_pkms[:3]):
                     enemy_img = get_pokemon_image(pkm.name, (140, 140), front=True)
                     screen.blit(enemy_img, (WIDTH - 320, y))
@@ -378,14 +362,12 @@ class PokemonGame:
                     if i < 2:
                         y += 120
 
-        # MESSAGE BOX
         msg_panel = pygame.Surface((850, 70))
         msg_panel.set_alpha(220)
         msg_panel.fill((0, 0, 0))
         screen.blit(msg_panel, (25, 20))
         pygame.draw.rect(screen, (255, 255, 255), (25, 20, 850, 70), 3)
         
-        # Word wrap for long messages
         words = self.message.split(' ')
         lines = []
         current_line = ""
@@ -401,8 +383,8 @@ class PokemonGame:
         for i, line in enumerate(lines[:2]):
             self.draw_text(line.strip(), 40, 30 + i * 25, (255, 255, 0), small_font)
 
-        # MENU OPTIONS
-        self.battle_menu.create_battle_menu() 
+        self.selected_index = self.battle_menu.get_current_index()
+        
         menu_panel = pygame.Surface((850, 60))
         menu_panel.set_alpha(220)
         menu_panel.fill((20, 20, 40))
@@ -414,7 +396,6 @@ class PokemonGame:
         for i, opt in enumerate(options):
             color = (255, 255, 0) if self.selected_index == i else (255, 255, 255)
             self.draw_text(opt, 80 + i * 200, 535, color)
-
 
     def draw_skill_selection(self):
         if backgrounds.get(self.current_area):
@@ -435,7 +416,6 @@ class PokemonGame:
         elif isinstance(self.enemy, Enemy):
             enemy_pkm = self.enemy.choose_pokemon()
 
-        # Player Pokemon
         player_img = get_pokemon_image(player_pokemon.name, (100, 100), front=False)
         screen.blit(player_img, (50, 400))
         
@@ -447,7 +427,6 @@ class PokemonGame:
         self.draw_text(f"{player_pokemon.name} Lv{player_pokemon.level}", 40, 485, (255,255,255), small_font)
         self.draw_text(f"HP: {player_pokemon.hp}/{player_pokemon.max_hp}", 40, 510, (255,255,255), small_font)
 
-        # Enemy Pokemon
         if enemy_pkm:
             enemy_img = get_pokemon_image(enemy_pkm.name, (100, 100), front=True)
             screen.blit(enemy_img, (700, 50))
@@ -460,7 +439,6 @@ class PokemonGame:
             self.draw_text(f"{enemy_pkm.name} Lv{enemy_pkm.level}", 590, 125, (255,255,255), small_font)
             self.draw_text(f"HP: {enemy_pkm.hp}/{enemy_pkm.max_hp}", 590, 150, (255,255,255), small_font)
 
-        # Message
         msg_panel = pygame.Surface((850, 50))
         msg_panel.set_alpha(220)
         msg_panel.fill((0, 0, 0))
@@ -468,12 +446,14 @@ class PokemonGame:
         pygame.draw.rect(screen, (255, 255, 255), (25, 20, 850, 50), 3)
         self.draw_text(self.message, 40, 35, (255,255,0), small_font)
         
-        # Move panel
         move_panel = pygame.Surface((500, 250))
         move_panel.set_alpha(220)
         move_panel.fill((20, 20, 60))
         screen.blit(move_panel, (200, 200))
         pygame.draw.rect(screen, (255, 255, 255), (200, 200, 500, 250), 3)
+        
+        # ===== ใช้ 2D Linked List ดึง index =====
+        self.selected_index = self.move_menu.get_current_index()
         
         moves = [move.name for move in player_pokemon.moves[:4]]
         self.menu_options = moves
@@ -557,6 +537,8 @@ class PokemonGame:
         else:
             self.state = "BATTLE"
             self.selected_index = 0
+            # ===== รีเซ็ต battle menu =====
+            self.battle_menu.reset_to_first()
 
     def set_skill_state(self):
         if not self.player["team"] or self.player["team"][0].hp <= 0:
@@ -571,36 +553,31 @@ class PokemonGame:
                 self.state = "GAME_OVER"
                 self.message = "All your Pokémon fainted! Game Over."
             return
+        
         self.state = "BATTLE_SKILL_SELECT"
         self.message = "Choose a move:"
-
+        
+        # ===== ใช้ 2D Linked List สร้างกริดท่า =====
         player_pokemon = self.player["team"][0]
         self.move_menu.create_move_menu(player_pokemon.moves)
-        
         self.selected_index = 0
 
     def handle_new_moves(self, pokemon):
-        # ถ้าไม่มี attribute pending_new_moves ให้คืน (ปลอดภัย)
         if not hasattr(pokemon, "pending_new_moves"):
             return
 
-        # ทำทีละท่าในคิว
         while pokemon.pending_new_moves:
             new_move = pokemon.pending_new_moves.pop(0)
             if len(pokemon.moves) < 4:
                 pokemon.moves.append(new_move)
                 self.message = f"{pokemon.name} learned {new_move.name}!"
-                # อาจอยากมี delay / animation — ปรับได้
             else:
-                # เตรียมเข้าสู่ NEW_MOVE UI (ให้ผู้เล่นเลือกท่าที่จะลืม)
                 self.pending_move = new_move
                 self.pending_pokemon = pokemon
                 self.state = "NEW_MOVE"
                 self.selected_index = 0
                 self.message = f"{pokemon.name} wants to learn {new_move.name}!"
-                # หยุด loop — รอให้ผู้เล่นเลือกผ่าน UI
                 return
-
 
     # ----------------------- CATCH ANIMATION -----------------------
     def draw_catch_animation(self):
@@ -614,14 +591,11 @@ class PokemonGame:
         overlay.fill((0, 0, 0))
         screen.blit(overlay, (0, 0))
         
-        # Show Pokemon
         if self.catch_candidate:
             poke_img = get_pokemon_image(self.catch_candidate.name, (150, 150), front=True)
             screen.blit(poke_img, (375, 200))
         
-        # Show Pokeball
         screen.blit(item_images["Pokeball"], (430, 350))
-        
         self.draw_text("Throwing Pokéball...", 320, 420, (255,255,0))
         
         elapsed = time.time() - self.catch_start_time
@@ -634,6 +608,8 @@ class PokemonGame:
             if caught:
                 if len(self.player["team"]) < 6:
                     self.player["team"].append(self.catch_candidate)
+                    # ===== ใช้ Queue: เพิ่ม Pokemon ที่จับได้ =====
+                    self.pokemon_queue.enqueue(self.catch_candidate)
                     self.message = f"You caught {self.catch_candidate.name}!"
                 else:
                     self.message = f"You caught {self.catch_candidate.name} but your team is full!"
@@ -681,7 +657,6 @@ class PokemonGame:
             border_color = (255, 255, 0) if i == self.reward_selected_index else (200, 200, 200)
             pygame.draw.rect(screen, border_color, (200, y_pos - 10, 500, 50), 3)
             
-            # Draw item icon
             if opt == "Pokéball +5" and "Pokeball" in item_images:
                 screen.blit(pygame.transform.scale(item_images["Pokeball"], (35, 35)), (215, y_pos - 5))
             elif opt == "Potion +1" and "Potion" in item_images:
@@ -760,7 +735,7 @@ class PokemonGame:
         self.stage_number += 1
         self.next_stage()
 
-    # ----------------------- BAG, SWITCH, RUN, GAME OVER, WIN -----------------------
+    # ----------------------- BAG, SWITCH, RUN -----------------------
     def open_bag(self):
         self.saved_index = self.selected_index
         self.state = "BAG"
@@ -844,13 +819,19 @@ class PokemonGame:
         if idx >= len(self.player["team"]) or self.player["team"][idx].hp <= 0:
             self.message = f"Cannot switch to that Pokémon!"
             return
+        
+        # ===== ใช้ Queue: สลับ Pokemon =====
+        # Dequeue ตัวหน้า แล้ว enqueue กลับไปท้าย
+        if not self.pokemon_queue.is_empty():
+            old_front = self.pokemon_queue.dequeue()
+            self.pokemon_queue.enqueue(old_front)
+        
         self.player["team"][0], self.player["team"][idx] = self.player["team"][idx], self.player["team"][0]
         self.message = f"{self.player['team'][0].name} is now in battle!"
         self.state = "BATTLE"
         self.selected_index = 0
 
     def run_away(self):
-        # Can't run from boss or rival battles
         if self.stage_number in self.boss_stages or self.stage_number in self.rival_stages:
             self.message = "Cannot run from this battle!"
             return
@@ -879,7 +860,9 @@ class PokemonGame:
     def restart(self):
         self.__init__()
 
-# ------------------- Main Loop -------------------
+# -----------------------
+# Main Loop
+# -----------------------
 game = PokemonGame()
 running = True
 
@@ -888,7 +871,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
-            # ---------------- MENU ----------------
             if game.state == "MENU":
                 if event.key == pygame.K_DOWN:
                     game.selected_index = (game.selected_index+1) % len(game.starters)
@@ -896,18 +878,21 @@ while running:
                     game.selected_index = (game.selected_index-1) % len(game.starters)
                 elif event.key == pygame.K_z:
                     game.start_game(game.starters[game.selected_index])
-            # ---------------- STAGE ----------------
+            
             elif game.state == "STAGE":
                 if event.key == pygame.K_z:
                     game.next_stage()
-            # ---------------- BATTLE ----------------
+            
+            # ===== ใช้ 2D Linked List ใน BATTLE =====
             elif game.state == "BATTLE":
                 if event.key == pygame.K_RIGHT:
-                    game.selected_index = min(game.selected_index+1, len(game.menu_options)-1)
+                    if game.battle_menu.move_right():
+                        game.selected_index = game.battle_menu.get_current_index()
                 elif event.key == pygame.K_LEFT:
-                    game.selected_index = max(game.selected_index-1, 0)
+                    if game.battle_menu.move_left():
+                        game.selected_index = game.battle_menu.get_current_index()
                 elif event.key == pygame.K_z:
-                    choice = game.menu_options[game.selected_index]
+                    choice = game.battle_menu.get_current_data()
                     if choice == "Fight":
                         game.set_skill_state()
                     elif choice == "Bag":
@@ -916,26 +901,28 @@ while running:
                         game.switch_pokemon()
                     elif choice == "Run":
                         game.run_away()
-            # ---------------- BATTLE_SKILL_SELECT ----------------
+            
+            # ===== ใช้ 2D Linked List ใน BATTLE_SKILL_SELECT =====
             elif game.state == "BATTLE_SKILL_SELECT":
                 if event.key == pygame.K_RIGHT:
-                    if game.selected_index % 2 == 0 and game.selected_index+1 < len(game.menu_options):
-                        game.selected_index += 1
+                    if game.move_menu.move_right():
+                        game.selected_index = game.move_menu.get_current_index()
                 elif event.key == pygame.K_LEFT:
-                    if game.selected_index % 2 == 1:
-                        game.selected_index -= 1
+                    if game.move_menu.move_left():
+                        game.selected_index = game.move_menu.get_current_index()
                 elif event.key == pygame.K_DOWN:
-                    if game.selected_index + 2 < len(game.menu_options):
-                        game.selected_index += 2
+                    if game.move_menu.move_down():
+                        game.selected_index = game.move_menu.get_current_index()
                 elif event.key == pygame.K_UP:
-                    if game.selected_index - 2 >= 0:
-                        game.selected_index -= 2
+                    if game.move_menu.move_up():
+                        game.selected_index = game.move_menu.get_current_index()
                 elif event.key == pygame.K_z:
                     game.use_skill()
                 elif event.key == pygame.K_x:
                     game.state = "BATTLE"
                     game.selected_index = 0
-            # ---------------- BAG ----------------
+                    game.battle_menu.reset_to_first()
+            
             elif game.state == "BAG":
                 if event.key == pygame.K_DOWN:
                     game.selected_index = (game.selected_index+1) % len(game.menu_options)
@@ -945,7 +932,7 @@ while running:
                     game.use_item()
                 elif event.key == pygame.K_x:
                     game.back_to_battle()
-            # ---------------- SWITCH ----------------
+            
             elif game.state == "SWITCH_PKM":
                 if event.key == pygame.K_DOWN:
                     if game.selected_index +1 < len(game.player["team"]):
@@ -958,10 +945,10 @@ while running:
                 elif event.key == pygame.K_x:
                     game.state = "BATTLE"
                     game.selected_index = game.saved_index
-            # ---------------- CATCH ----------------
+            
             elif game.state == "CATCH_ANIMATION":
                 pass
-            # ---------------- REWARD ----------------
+            
             elif game.state == "REWARD":
                 if event.key == pygame.K_DOWN:
                     game.reward_selected_index = min(game.reward_selected_index+1, len(game.reward_options)-1)
@@ -969,6 +956,7 @@ while running:
                     game.reward_selected_index = max(game.reward_selected_index-1, 0)
                 elif event.key == pygame.K_z:
                     game.use_reward()
+            
             elif game.state == "REWARD_SELECT":
                 if event.key == pygame.K_DOWN:
                     game.reward_selected_index = min(game.reward_selected_index+1, len(game.reward_select_list)-1)
@@ -976,17 +964,16 @@ while running:
                     game.reward_selected_index = max(game.reward_selected_index-1, 0)
                 elif event.key == pygame.K_z:
                     game.apply_reward()
-            # ---------------- NEW MOVE ----------------
+            
             elif game.state == "NEW_MOVE":
                 moves_count = len(game.pending_pokemon.moves) if game.pending_pokemon else 0
-                total_options = moves_count + 1  # last = Cancel
+                total_options = moves_count + 1
 
                 if event.key == pygame.K_DOWN:
                     game.selected_index = (game.selected_index + 1) % total_options
                 elif event.key == pygame.K_UP:
                     game.selected_index = (game.selected_index - 1) % total_options
                 elif event.key == pygame.K_z:
-                    # safety check
                     if not game.pending_pokemon or not game.pending_move:
                         game.message = "No pending move."
                         game.state = "BATTLE"
@@ -995,13 +982,11 @@ while running:
                             forgotten = game.pending_pokemon.moves[game.selected_index].name
                             game.pending_pokemon.moves[game.selected_index] = game.pending_move
                             game.message = f"{game.pending_pokemon.name} forgot {forgotten} and learned {game.pending_move.name}!"
-                        else:  # Cancel
+                        else:
                             game.message = f"{game.pending_pokemon.name} did not learn {game.pending_move.name}."
 
-                        # ถ้าการเรียกมาจาก Rare Candy (reward flow) กลับไป REWARD
                         if getattr(game, "reward_action", "") == "Rare Candy":
                             game.state = "REWARD"
-                            # ล้าง reward_action เพื่อไม่ให้ติดข้ามรอบ
                             game.reward_action = ""
                         else:
                             game.state = "BATTLE"
@@ -1009,7 +994,7 @@ while running:
                         game.pending_move = None
                         game.pending_pokemon = None
                         game.selected_index = 0
-            # ---------------- GAME OVER / WIN ----------------
+            
             elif game.state in ["GAME_OVER","WIN"]:
                 if event.key == pygame.K_z:
                     game.restart()

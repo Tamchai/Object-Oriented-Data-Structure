@@ -140,6 +140,10 @@ class Menu2DLinkedList:
             return self.all_nodes.index(self.current)
         except ValueError:
             return 0
+    
+    def reset_to_first(self):
+        """Reset current to root node"""
+        self.current = self.root
 
 
 class TreeNode:
