@@ -24,10 +24,6 @@ class WildPokemon:
 # Encounter System
 # -----------------------
 def encounter(area_name, max_level=5):
-    """
-    Return a WildPokemon instance in the given area.
-    max_level: maximum level of wild Pokémon
-    """
     if area_name not in AREAS:
         raise ValueError(f"No such area: {area_name}")
     
@@ -41,10 +37,6 @@ def encounter(area_name, max_level=5):
 # Area Sequence (Stage order)
 # -----------------------
 def get_area_for_stage(stage_number):
-    """
-    Return area name based on stage number (1-50):
-    1-10: Forest, 11-20: Cave, 21-30: Tower, 31-40: Beach, 41-50: Tower
-    """
     if 1 <= stage_number <= 10:
         return "Forest"
     elif 11 <= stage_number <= 20:
